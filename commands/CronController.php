@@ -31,29 +31,26 @@ class CronController extends Controller
      */
     public function actionIndex()
     {
+        if(!\Yii::$app->mutex->acquire('cron_process')){
+            echo "Lock failed. Exiting";
+            return 0;
+        }
+        echo "Lock acquired\n";
+
         $start_time = time();
 
+        echo date('Y-m-d H:i:s', $start_time);
 
         $schedules = Schedule::findAll(['status' => 'ACTIVE']);
-
         foreach ($schedules as $schedule){
             $stime = strtotime($schedule->next);
-            echo "Processing {$schedule->id} {$schedule->next}  {$start_time} {$stime}\n";
             if($stime < $start_time || ($stime - $start_time) < $this->correction){
+                echo "Processing {$schedule->id} {$schedule->next}  {$start_time} {$stime} => ";
                 $this->run_backup($schedule);
             }
         }
 
-//        $process = new Process('ls -lsa');
-//        $process->run();
-//
-//// executes after the command finishes
-//        if (!$process->isSuccessful()) {
-//            throw new ProcessFailedException($process);
-//        }
-//
-//        echo $process->getOutput();
-
+        echo "Completed\n\n";
     }
 
 
@@ -72,6 +69,7 @@ class CronController extends Controller
         $log = new BackupLog();
         $log->schedule = $schedule->id;
         $log->schema = $schedule->schema;
+        $log->hash = '';
         $log->artifact = $destination;
         $log->save();
 
@@ -83,11 +81,40 @@ class CronController extends Controller
             }
             $log->hash = sha1_file($destination);
             $log->status = 'COMPLETED';
-            
+
+            echo "Backup created [{$log->hash}]\n";
+
+            //calculate next run
+            if($schedule->type == 'SCHEDULED'){
+                $schedule->status = 'COMPLETED';
+            }else{
+                $difference = 0;
+                switch($schedule->frequency){
+                    case 'HOURLY': $difference = 1;
+                        break;
+                    case 'EVERY_4HOUR': $difference = 4;
+                        break;
+                    case 'DAILY': $difference = 24;
+                        break;
+                }
+                $next = time() + 3600 * $difference;
+                $schedule->next = date('Y-m-d H:i:s', $next);
+            }
+
+            $schedule->save();
+
             //check retention
+            while($schedule->getBackupLogs()->count() > $schedule->retention){
+                $todelete = $schedule->getBackupLogs()->addOrderBy(['id' => SORT_ASC])->one();
+                echo "Removing {$todelete->artifact}\n";
+                unlink($todelete->artifact);
+                $todelete->delete();
+            }
+
             return true;
         }catch(Exception $ex){
             $log->status = 'FAILED';
+            echo "Backup failed\n";
             return false;
         }finally{
             $log->save();
