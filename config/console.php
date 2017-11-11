@@ -15,6 +15,9 @@ $config = [
         'mutex' => [
             'class' => 'yii\mutex\FileMutex',
         ],
+        'cache' => [
+            'class' => 'yii\caching\FileCache',
+        ],
         'log' => [
             'targets' => [
                 [

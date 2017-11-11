@@ -35,11 +35,14 @@ class CronController extends Controller
             echo "Lock failed. Exiting";
             return 0;
         }
-        echo "Lock acquired\n";
 
         $start_time = time();
+        $start = date('Y-m-d H:i:s', $start_time);
 
-        echo date('Y-m-d H:i:s', $start_time);
+        echo "Lock acquired {$start}\n";
+
+
+        \Yii::$app->cache->set('last_run',$start);
 
         $schedules = Schedule::findAll(['status' => 'ACTIVE']);
         foreach ($schedules as $schedule){
