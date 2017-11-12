@@ -24,7 +24,7 @@ class CronController extends Controller
 {
 
 
-    protected $correction = 15*60;
+    protected $sensivity = 15*60;
     /**
      * This command echoes what you have entered as the message.
      * @param string $message the message to be echoed.
@@ -37,6 +37,15 @@ class CronController extends Controller
         }
 
         $start_time = time();
+        $last_time = \Yii::$app->cache->get('cron_last');
+
+        $this->sensivity = 600;
+        if($last_time !== false) {
+            $this->sensivity = ceil(($last_time - $start_time) / 2);
+        }
+
+        \Yii::$app->cache->set('cron_last', $start_time);
+
         $start = date('Y-m-d H:i:s', $start_time);
 
         echo "Lock acquired {$start}\n";
@@ -47,7 +56,7 @@ class CronController extends Controller
         $schedules = Schedule::findAll(['status' => 'ACTIVE']);
         foreach ($schedules as $schedule){
             $stime = strtotime($schedule->next);
-            if($stime < $start_time || ($stime - $start_time) < $this->correction){
+            if($stime < $start_time || ($stime - $start_time) < $this->sensivity){
                 echo "Processing {$schedule->id} {$schedule->next}  {$start_time} {$stime} => ";
                 $this->run_backup($schedule);
             }
