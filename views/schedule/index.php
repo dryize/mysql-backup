@@ -33,7 +33,7 @@ $this->params['breadcrumbs'][] = $this->title;
             'frequency',
             'status',
             'retention',
-            //'destination',
+            'destination',
             'next',
             'last_run',
             //'created_at',

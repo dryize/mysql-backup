@@ -7,6 +7,12 @@ use yii\widgets\ActiveForm;
 /* @var $this yii\web\View */
 /* @var $model app\models\Schedule */
 /* @var $form yii\widgets\ActiveForm */
+
+$stores = [];
+
+foreach (\Yii::$app->params['stores'] as $store=> $val){
+    $stores[$store] = $store;
+}
 ?>
 
 <div class="schedule-form">
@@ -53,7 +59,7 @@ use yii\widgets\ActiveForm;
 
 
     <div class="col-md-9">
-    <?= $form->field($model, 'destination')->textInput(['maxlength' => true]) ?>
+        <?= $form->field($model, 'destination')->dropDownList($stores) ?>
     </div>
 
     <div class="form-group">
