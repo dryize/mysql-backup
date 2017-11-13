@@ -96,7 +96,7 @@ class CronController extends Controller
 
     protected function run_backup(Schedule $schedule){
 
-        $filename =  $schedule->schema . '-' . date('Ymd_His') . '.sql';
+        $filename =  $schedule->tag . '/' . date('Ymd_His') . '.sql';
 
 
         $host = $schedule->host0;
