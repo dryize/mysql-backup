@@ -96,7 +96,7 @@ class CronController extends Controller
 
     protected function run_backup(Schedule $schedule){
 
-        $filename =  date('Ymd_His') . '.sql';
+        $filename =  $schedule->schema . '-' . date('Ymd_His') . '.sql';
 
 
         $host = $schedule->host0;
@@ -152,7 +152,7 @@ class CronController extends Controller
                         break;
                 }
                 $next = time() + 3600 * $difference;
-                //$schedule->next = date('Y-m-d H:i:s', $next);
+                $schedule->next = date('Y-m-d H:i:s', $next);
             }
 
             $schedule->save();
